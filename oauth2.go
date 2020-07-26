@@ -10,17 +10,19 @@ import (
 	"net/url"
 	"strings"
 	"time"
-
 )
 
+// SetRefreshToken allows a user to manually set the refresh token for OAuth flow
 func (z *Zoho) SetRefreshToken(refreshToken string) {
 	z.oauth.token.RefreshToken = refreshToken
 }
 
+// SetClientID allows a user to manually set the client ID for OAuth flow
 func (z *Zoho) SetClientID(clientID string) {
 	z.oauth.clientID = clientID
 }
 
+// SetClientSecret allows a user to manually set the client secret for OAuth flow
 func (z *Zoho) SetClientSecret(clientSecret string) {
 	z.oauth.clientSecret = clientSecret
 }
