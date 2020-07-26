@@ -29,8 +29,11 @@ type Parameter string
 
 // HTTPRequest is the function which actually performs the request to a Zoho endpoint as specified by the provided endpoint
 func (z *Zoho) HTTPRequest(endpoint *Endpoint) (err error) {
+	// If the endpoint struct didn't provided a pointer, then change it to a pointer.
+	// NOTE: The result of this change will be a runtime error as the caller is expecting the provided type
+	//    which can hopefully be caught in a unit test when they are added.
 	if reflect.TypeOf(endpoint.ResponseData).Kind() != reflect.Ptr {
-		return fmt.Errorf("Failed, you must pass a pointer in the ResponseData field of endpoint")
+		endpoint.ResponseData = reflect.New(reflect.TypeOf(endpoint.ResponseData))
 	}
 
 	// Load and renew access token if expired
@@ -118,14 +121,26 @@ func (z *Zoho) HTTPRequest(endpoint *Endpoint) (err error) {
 	}
 
 	dataType := reflect.TypeOf(endpoint.ResponseData).Elem()
-	data := reflect.New(dataType).Interface()
+	data := reflect.New(dataType)
+	dataI := data.Interface()
 
-	err = json.Unmarshal(body, data)
+	err = json.Unmarshal(body, dataI)
 	if err != nil {
 		return fmt.Errorf("Failed to unmarshal data from response for %s: got status %s: %s", endpoint.Name, resolveStatus(resp), err)
 	}
 
-	endpoint.ResponseData = data
+	rawField := data.FieldByName("_Raw")
+	if rawField.IsValid() && rawField.CanSet() {
+		raw := make(map[string]interface{})
+		err = json.Unmarshal(body, &raw)
+		if err != nil {
+			return fmt.Errorf("Failed to unmarshal data from response for %s: got status %s: %s", endpoint.Name, resolveStatus(resp), err)
+		}
+
+		rawField.Set(reflect.ValueOf(raw))
+	}
+
+	endpoint.ResponseData = dataI
 
 	return nil
 }
