@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+
 )
 
 // Endpoint defines the data required to interact with most Zoho REST api endpoints
@@ -129,7 +130,7 @@ func (z *Zoho) HTTPRequest(endpoint *Endpoint) (err error) {
 		return fmt.Errorf("Failed to unmarshal data from response for %s: got status %s: %s", endpoint.Name, resolveStatus(resp), err)
 	}
 
-	rawField := data.FieldByName("_Raw")
+	rawField := reflect.ValueOf(data).FieldByName("_Raw")
 	if rawField.IsValid() && rawField.CanSet() {
 		raw := make(map[string]interface{})
 		err = json.Unmarshal(body, &raw)
